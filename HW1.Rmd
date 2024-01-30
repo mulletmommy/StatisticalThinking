@@ -1,0 +1,135 @@
+---
+title: "HW1"
+output: html_document
+date: "2024-01-29"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+pretty <- read.csv("profs.csv")
+bikes <- read.csv("bikeshare.csv")
+```
+
+**Name: Chester Ashby**
+**UTEID: coa398**
+**Link: https://github.com/mulletmommy/StatisticalThinking.git**
+
+##1 
+
+
+###A
+```{r, echo=FALSE}
+#finds histogram of course evaluation scores
+pretty %>% 
+  ggplot(aes(x = eval)) + 
+  geom_histogram(color = "black", bins = 30)+
+  labs(title = "Histogram of Course Evaluation Scores", x = "Count", y = "Evaluation Scores")
+```
+
+**This distribution seems to have two peaks, but is probably just a skewed bellshaped curve, where the evaluation score is around 4 to 4.2 points. As most of the data is centered above 3, it seems that most professors are decently successful at teaching.**
+
+
+###B
+
+```{r, echo=FALSE}
+#creates boxplots of evaluation scores based on whether or not professors mother language was english
+pretty %>% 
+  ggplot(aes(x = native, y = eval))+
+  geom_boxplot(fill = "white")+
+  labs(title = "Evaluation Scores of UT Professors who are and aren't Native English Speakers", 
+       x = "Native English Speaker", y = "Evaluation Scores")
+
+#finds the average of whether or not professor was native english speaker
+av1 <- pretty %>% 
+  filter(native == "no") %>% 
+  summarize(average = mean(eval))
+av2 <- pretty %>% 
+  filter(native == "yes") %>% 
+  summarize(average = mean(eval))
+```
+
+**The average evaluation score for a non-native English speaking professor is `r round(av1, 2)` while the average evaluation score for a native English speaking professor is `r round(av2, 2)`. It seems that the average English speaking professor does get better evaluation scores than non-native English speaking professors. **
+
+
+###C
+
+```{r, echo=FALSE}
+#creates histogram of course evaluation scores, faceted into male and female
+pretty %>% 
+  ggplot(aes(x = eval, fill = gender)) + 
+  geom_histogram(color = "black", bins = 30)+
+  facet_wrap(~gender)+
+  labs(title = "Histogram of Course Evaluation Scores", x = "Count", y = "Evaluation Scores")
+
+#finds the average evaluation scores based on male or female
+av1 <- pretty %>% 
+  filter(gender == "male") %>% 
+  summarize(average = mean(eval))
+av2 <- pretty %>% 
+  filter(gender == "female") %>% 
+  summarize(average = mean(eval))
+```
+
+
+**The average evaluation score for male Professors at UT was `r round(av1, 2)`, while the average evaluation score for female Professors at UT was `r round(av2, 2)`. There seems to be about an .1 difference between males and females, although the graphs seem to show that the male peak leans farther to the right by more points than .1 than female.**
+
+
+###D
+
+```{r, echo=FALSE}
+#creates scatterplot of physical attractivenss vs Course Evaluations with linear regression
+pretty %>% 
+  ggplot(aes(x = beauty, y = eval)) + 
+  geom_point(color = "blue")+
+  labs(title = "Scatterplot of Physical Attractiveness vs. Course Evaluations",
+       x = "Physical Attractiveness",
+       y = "Course Evaluations")+
+  geom_smooth(method = "lm", se = FALSE, color = "black")
+```
+
+
+**The correlation coefficient between Physical Attrativeness of UT Professors vs their Course Evaluations is `r round(cor(pretty[,"beauty"], pretty[,"eval"]), 2)`. This reveals that there is no evidence that the physical attractiveness of a Professor at UT influences how well they are graded on their teaching ability.**
+
+
+##2
+
+###A
+
+```{r, echo=FALSE}
+#creates dataset "bikerents", where it finds average rentals of bikes per hour
+bikerents <- bikes %>% 
+  group_by(hr) %>% 
+  summarize(avgNumofBikes = mean(total))
+
+#creates a line graph based on the newly formed "bikerents" data set
+bikerents %>% 
+  ggplot(aes(x = hr, y = avgNumofBikes))+
+  geom_line(color = "blue")+
+  labs(title = "Average hourly bike rentals(total) across all hours of the day(hr)", 
+       x = "Hour", y = "Average Number of Hourly Bike Rentals")
+```
+
+
+**The line graph illustrates the average hourly bike rentals across all days. The x-axis represents the hour of the day, and the y-axis represents the average number of bike rentals. The plot shows how bike rental patterns vary throughout the day. The line graph seems to be bimodal, as popularity of Bike rides peak at 8 and 17-18.**
+
+###B
+
+```{r, echo=FALSE}
+#creates dataset "workingdays", where it finds average rentals of bikes per hour, but also indicates whether or not it's a workday
+workingday <- bikes %>%
+  group_by(hr, workingday) %>%
+  summarize(avgNumOfBikes = mean(total))
+
+#creates a faceted line graph on newly formed "workingdays" data set, faceted by whether or not it's a working day
+workingday %>% 
+  ggplot(aes(x = hr, y = avgNumOfBikes)) +
+  geom_line() +
+  facet_wrap(~workingday)
+  labs(title = "Average Bike Rentals by Hour of the Day",
+       x = "Hour of the Day",
+       y = "Average Rentals")
+```
+
+
+**The faceted line graph shows how average bike rentals vary by hour of the day, with different lines representing working days and non-working days. The x-axis represents the hour of the day, the y-axis represents the average number of bike rentals, and each line corresponds to a different working day status. 0 represent nonworkdays and 1 represents workdays. The trend seem to follow the getting and coming from work on days that there are work, while on nonworking days, the trend seems to increase through the day and decrease at night.**
