@@ -1,0 +1,127 @@
+---
+title: "HW3"
+output: html_document
+date: "2024-02-06"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(knitr)
+
+creatine <- read.csv("creatinine.csv")
+covid <- read.csv("covid.csv")
+milk <- read.csv("milk.csv")
+marketmodel <- read.csv("marketmodel.csv")
+```
+
+
+**Name: Chester Ashby**
+**UTEID: coa398**
+**Link: https://github.com/mulletmommy/StatisticalThinking.git**
+
+## Question 1
+
+
+```{r, echo=FALSE}
+#fitting linear relationship between creatine clear rate and ages
+model_creatine <- lm(creatclear ~ age, data = creatine)
+coef(model_creatine)
+```
+
+
+
+### 1.A
+**To calculate the creatine clearance rate for the average 55 year-old, plug 55 into x in the equation y = -.62x + 147.813, which in this case y = -.62(55) + 147.813 = 113.723 mL/minute.**
+
+### 1.B
+**The creatine clearance rate decreases by .62 mL/minute per year. I figured this out by finding the slope of this relationship.**
+
+### 1.C
+**Average Creatine Clearance Rate of 40 year old: Creatine Clearance Rate = -.62(40) + 147.812 = 123.02 mL/minute.**
+**Average Creatine Clearance Rate of 60 year old: Creatine Clearance Rate = -.62(60) + 147.812 = 110.624 mL/minute.**
+**The residual of a 40 year who has a heart rate of 135 is 135 - 123.02 = 111.98 mL/minute, while the residual of a 60 year who has a heart rate of 112 is 112 - 110.624 = 1.376 mL/minute. Therefore the creatine clearance rate of the 40 year old is healthier/higher for their age than the 60 year old.**
+
+
+## Question 2
+
+**The beta is a measure of the systematic risk of an asset, as in it's the percentage change in an asset's return given a 1% change in the market portfolio. It is calculated by finding the slope of the regression model Yt = β + β1Xt + e(k), where Yt is the rate of return of an individual stock and Xt is the rate of return of the entire stock market in that same time period. β1(k) represents is the calculated beta of the stock(the slope that's calculated from Yt and Xt), while β is the alpha, the measure of excess return.**
+
+```{r, echo=FALSE}
+#pivot_longer the table so that each individual Stock is now a row instead of a column
+market <- marketmodel %>% 
+  pivot_longer(cols = -c("Date", "SPY"), names_to = "Stock", values_to = "Returns")
+
+#create empty tibble
+market_table <- tibble()
+
+#use loop to go through each unique asset
+for(i in unique(market$Stock)){
+  #creates new data set with only one specific asset
+  specified_stock <- market %>% filter(Stock == i)
+  
+  #summarizes and creates a table of Intercept, Slope, and R-Squared values of the relationship between the return of the market vs the return of the specific asset
+  stock_table <- specified_stock %>% 
+  summarize(Stock = i, Intercept = coef(lm(Returns ~ SPY, data = .))[[1]],
+            Slope = coef(lm(Returns ~ SPY, data = .))[[2]], 
+            R_Squared = summary(lm(Returns ~ SPY, data = .))$r.squared)
+ 
+  #binds stock_table to market_table
+  market_table <- bind_rows(market_table, stock_table)
+}
+
+market_table
+```
+
+**Stock represents the ticker symbol of each asset (AAPL -> Apple). Intercept represents the alpha of the stock (measure of excess return). The slope represents the beta of the stock or the percentage change in an asset's return given a 1% change in the market portfolio. R_Squared represents the fraction of variation in y that is predictable in terms of x, or in this case, the variation in the rate of returns of assets that is predictable in terms of the rate of return of the market.**
+
+**Apple(AAPL) has the highest systematic risk at 1.066, while Wal-Mart(WMT) has the lowest systematic risk at 0.519.**
+
+## Question 3
+
+### 3.A
+```{r, echo=FALSE}
+#creating dataset with just Italy
+covid_in_Italy <- covid %>% 
+  filter(country == "Italy")
+#fitting linear regression model by using log on this exponential relationship
+lm_covid_Italy = lm(log(deaths) ~ days_since_first_death, data = covid_in_Italy)
+
+coef(lm_covid_Italy)
+```
+
+**The average growth rate of Covid cases per day in Italy is 0.183 or 18.3%. While the doubling time for Covid cases is 70/18.3 = 4 days.**
+
+### 3.B
+```{r, echo=FALSE}
+#creating dataset with just Spain
+covid_in_Spain <- covid %>% 
+  filter(country == "Spain")
+
+#fitting linear regression model by using log on this exponential relationship
+lm_covid_Spain = lm(log(deaths) ~ days_since_first_death, data = covid_in_Spain)
+
+coef(lm_covid_Spain)
+```
+
+**The average growth rate of Covid cases per day in Spain is .276 or 27.6%. While the doubling time for Covid cases is 70/27.6 = 3 days.**
+
+### 3.C
+```{r, echo=FALSE}
+#creating line graph looking at rate of growth of covid cases between Spain and Italy
+covid %>% 
+  ggplot(aes(x = days_since_first_death, y = log(deaths), group = country, color = country))+
+  geom_line()+
+  labs(title = "Growth Rate of Covid Cases in Italy and Spain", y = "log(Deaths)", x = "Days Since First Death", color = "Country")
+```
+
+
+## Question 4
+
+```{r, echo=FALSE}
+#finding the linear regression of the Power Laws in milk
+lm_milk <- lm(log(sales) ~ log(price), data = milk)
+coef(lm_milk)
+```
+
+**The estimated price elasticity of demand for milk is -1.619. This means that when the price of milk increases by 1%, the average percentage change in the demand for milk is -1.619%. This relationship can be represented by the power law (Q = KP^β), which is non-linear. In order to make it linear, I fit the model using logarithmic scale for both the x variable and the y variable. This results in the linear equation for log(sales) vs log(price), with an intercept of log(K) and a slope of β(elasticity of demand), which is equal to -1.619.**
