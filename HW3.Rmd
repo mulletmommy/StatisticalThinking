@@ -17,7 +17,9 @@ marketmodel <- read.csv("marketmodel.csv")
 
 
 **Name: Chester Ashby**
+
 **UTEID: coa398**
+
 **Link: https://github.com/mulletmommy/StatisticalThinking.git**
 
 ## Question 1
