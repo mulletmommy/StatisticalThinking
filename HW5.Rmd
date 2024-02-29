@@ -1,0 +1,139 @@
+---
+title: "HW5"
+output: html_document
+date: "2024-02-25"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(mosaic)
+```
+
+**Name: Chester Ashby**
+**UTEID: coa398**
+**Link: https://github.com/mulletmommy/StatisticalThinking.git**
+
+
+## Question 1
+
+**Null Hypothesis: Over the long run, securities trades from the Iron Bank are flagged at the same 2.4% baseline rate as that of other traders.**
+
+**Test Statistic: number of flagged trades that are over 70.**
+
+```{r, echo=FALSE}
+sim_flagtrades = do(100000)*nflip(n=2021, prob=.024)
+
+
+ggplot(sim_flagtrades) + 
+  geom_histogram(aes(x=nflip), binwidth=1)
+
+p_value <- sum(sim_flagtrades >= 70)/100000
+round(p_value, 3)
+```
+
+**Since the p-value score is 0.002, which is less than 0.05, it indicates that the p-value is statistically significant. In this case of flagged trades from Iron Bank, there is a possibility that there could be Insider Trading or something else that could explain the p-value.**
+
+
+## Question 2
+
+
+**Null Hypothesis: The number of health code violations by Gourmet Bite are consistent with the average 3% baseline rate that restaurants in the city are cited for.**
+
+**Testing Statstic: number of health code violations that are over 8.**
+
+```{r, echo=FALSE}
+sim_violation = do(100000)*nflip(n=50, prob = 0.03)
+
+
+ggplot(sim_violation) +
+  geom_histogram(aes(x=nflip), binwidth=1)
+
+p_value2 <- sum(sim_violation >= 8)/100000
+round(p_value2, 3)
+```
+
+
+**The p-value score is 0.000, which is less than 0.05, and therefore indicates that the p-value is statistically significant. It is highly likely that Gourmet Bite are cited for health code violations at higher rate than the average 3% baseline rate of the city. Therefore the Health Department should take action against Gourmet Bites.** 
+
+
+## Question 3
+
+```{r, echo=FALSE}
+brown_sentences <- readLines("brown_sentences.txt")
+
+# Import letter frequencies
+letter_frequencies = read.csv("letter_frequencies.csv")
+
+# This will calculate the chi-squared goodness of fit statistic
+# for an input sentence, based on a frequency table of letters
+calculate_chi_squared = function(sentence, freq_table) {
+  
+  # Ensure letter frequencies are normalized and sum to 1
+  freq_table$Probability = freq_table$Probability / sum(freq_table$Probability)
+  
+  # Remove non-letters and convert to uppercase
+  clean_sentence = gsub("[^A-Za-z]", "", sentence)
+  clean_sentence = toupper(clean_sentence)
+  
+  # Count the occurrences of each letter in the sentence
+  observed_counts = table(factor(strsplit(clean_sentence, "")[[1]], levels = freq_table$Letter))
+  
+  # Calculate expected counts
+  total_letters = sum(observed_counts)
+  expected_counts = total_letters * freq_table$Probability
+  
+  # Chi-squared statistic
+  chi_squared_stat = sum((observed_counts - expected_counts)^2 / expected_counts)
+  
+  return(chi_squared_stat)
+}
+
+##creates empty vector for all the chi_squared values of brown_sentences
+chi_sq = rep(0, length(brown_sentences))
+
+#loops through brown_sentences and adds the its chi_squred value to chi_sq
+for (i in 1:length(brown_sentences)){
+  chi_sq[i] = calculate_chi_squared(brown_sentences[i], letter_frequencies)
+}
+
+#plotting chi_sq
+plot(chi_sq, log='y')
+
+```
+
+
+```{r, echo = FALSE}
+sentences <- c(
+  "She opened the book and started to read the first chapter, eagerly anticipating what might come next.",
+  "Despite the heavy rain, they decided to go for a long walk in the park, crossing the main avenue by the fountain in the center.",
+  "The museum’s new exhibit features ancient artifacts from various civilizations around the world.",
+  "He carefully examined the document, looking for any clues that might help solve the mystery.",
+  "The students gathered in the auditorium to listen to the guest speaker’s inspiring lecture.",
+  "Feeling vexed after an arduous and zany day at work, she hoped for a peaceful and quiet evening at home, cozying up after a quick dinner with some TV, or maybe a book on her upcoming visit to Auckland.",
+  "The chef demonstrated how to prepare a delicious meal using only locally sourced ingredients, focusing mainly on some excellent dinner recipes from Spain.",
+  "They watched the sunset from the hilltop, marveling at the beautiful array of colors in the sky.",
+  "The committee reviewed the proposal and provided many points of useful feedback to improve the project’s effectiveness.",
+  "Despite the challenges faced during the project, the team worked tirelessly to ensure its successful completion, resulting in a product that exceeded everyone’s expectations."
+)
+#creating empty vector for "sentences"'s chi_squared values
+the_one <- rep(0, 10)
+
+#looping through "sentences" and adding its following chi_squared values to "the_one"
+for (i in 1:10){
+  chi_value = calculate_chi_squared(sentences[i], letter_frequencies)
+  the_one[i] = sum(chi_sq >= chi_value)/sum(chi_sq)
+}
+
+#making a tibble of "the_one"
+the_one_tibble <- tibble(the_one) %>% 
+  mutate(sentence = 1:10) %>% 
+  mutate(p_value = round(the_one, 3)) %>% 
+  select(sentence, p_value)
+
+the_one_tibble
+```
+
+
+**The sentence water marked by an LLM is sentence 6. It has a p-value of 0.000, which is way smaller than 0.05, which indicates that the p-value is statistically significant.Sentence 6's is extremely close to actual 0, which means that it is unlikely to be described by chance, but rather by a cause, which in this case is the watermark.**
+
